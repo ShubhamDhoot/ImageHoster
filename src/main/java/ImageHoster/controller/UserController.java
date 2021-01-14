@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Controller
@@ -40,9 +42,31 @@ public class UserController {
     //This controller method is called when the request pattern is of type 'users/registration' and also the incoming request is of POST type
     //This method calls the business logic and after the user record is persisted in the database, directs to login page
     @RequestMapping(value = "users/registration", method = RequestMethod.POST)
-    public String registerUser(User user) {
-        userService.registerUser(user);
-        return "redirect:/users/login";
+    public String registerUser(User user,Model model) {
+        Pattern specialCharRegex = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE);
+        Pattern letterRegex = Pattern.compile("[A-Za-z ]");
+        Pattern numberRegex = Pattern.compile("[0-9 ]");
+        Matcher specialCharMatcher = specialCharRegex.matcher(user.getPassword());
+        Matcher letterMatcher = letterRegex.matcher(user.getPassword());
+        Matcher numberMatcher = numberRegex.matcher(user.getPassword());
+        System.out.println("Pass check");
+        System.out.println(user.getPassword());
+        //System.out.println(specialCharMatcher.find());
+        //System.out.println(letterMatcher.find());
+        //System.out.println(numberMatcher.find());
+        if (specialCharMatcher.find() && letterMatcher.find() && numberMatcher.find()) {
+            System.out.println("in true");
+            userService.registerUser(user);
+            return "users/login";
+        } else {
+            String error = "Password must contain atleast 1 alphabet, 1 number & 1 special character";
+            model.addAttribute("passwordTypeError", error);
+            User newUser = new User();
+            UserProfile profile = new UserProfile();
+            newUser.setProfile(profile);
+            model.addAttribute("User", newUser);
+            return "users/registration";
+        }
     }
 
     //This controller method is called when the request pattern is of type 'users/login'
